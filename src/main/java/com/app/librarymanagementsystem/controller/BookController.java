@@ -2,6 +2,7 @@ package com.app.librarymanagementsystem.controller;
 
 import com.app.librarymanagementsystem.dto.BookDTO;
 import com.app.librarymanagementsystem.service.BookService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import java.util.List;
 @RequestMapping("/api/books")
 @Slf4j
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class BookController {
     private final BookService bookService;
 
