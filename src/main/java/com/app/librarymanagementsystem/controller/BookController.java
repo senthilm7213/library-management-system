@@ -1,14 +1,15 @@
-// BookController.java
 package com.app.librarymanagementsystem.controller;
 
 import com.app.librarymanagementsystem.dto.BookDTO;
 import com.app.librarymanagementsystem.service.BookService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -19,19 +20,23 @@ public class BookController {
     private final BookService bookService;
 
     @PostMapping
-    public ResponseEntity<BookDTO> registerBook(@RequestBody BookDTO bookDTO) {
+    public ResponseEntity<BookDTO> registerBook(@Valid @RequestBody BookDTO bookDTO) {
         log.info("Request to create book: {}", bookDTO);
-        try {
-            BookDTO savedBook = bookService.registerBook(bookDTO);
-            return new ResponseEntity<>(savedBook, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+
+        BookDTO savedBook = bookService.registerBook(bookDTO);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(savedBook.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(savedBook);
     }
 
     @GetMapping
     public ResponseEntity<List<BookDTO>> getAllBooks() {
-        log.info("Request to get All books");
+        log.info("Request to get all books");
         List<BookDTO> books = bookService.getAllBooks();
         return ResponseEntity.ok(books);
     }
@@ -39,7 +44,9 @@ public class BookController {
     @GetMapping("/{bookId}")
     public ResponseEntity<BookDTO> getBookDetails(@PathVariable Long bookId) {
         log.info("Request to get book with id: {}", bookId);
-        BookDTO bookDTO = bookService.getBookById(bookId);
-        return ResponseEntity.ok(bookDTO);
+
+        return bookService.getBookById(bookId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

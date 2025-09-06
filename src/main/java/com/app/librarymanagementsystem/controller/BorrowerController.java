@@ -1,16 +1,15 @@
-// BorrowerController.java
 package com.app.librarymanagementsystem.controller;
 
 import com.app.librarymanagementsystem.dto.BorrowerDTO;
 import com.app.librarymanagementsystem.service.BorrowerService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -18,42 +17,51 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class BorrowerController {
-    private static final Logger logger = LoggerFactory.getLogger(BorrowerController.class);
 
     private final BorrowerService borrowerService;
 
     @PostMapping
-    public ResponseEntity<BorrowerDTO> registerBorrower(@RequestBody BorrowerDTO borrowerDTO) {
-        logger.info("Request to create borrower: {}", borrowerDTO);
+    public ResponseEntity<BorrowerDTO> registerBorrower(@Valid @RequestBody BorrowerDTO borrowerDTO) {
+        log.info("Request to create borrower: {}", borrowerDTO);
+
         BorrowerDTO savedBorrower = borrowerService.registerBorrower(borrowerDTO);
-        return new ResponseEntity<>(savedBorrower, HttpStatus.CREATED);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(savedBorrower.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(savedBorrower);
     }
 
     @PostMapping("/{borrowerId}/borrow/{bookId}")
-    public ResponseEntity<String> borrowBook(@PathVariable Long borrowerId, @PathVariable Long bookId) {
-        logger.info("Request to borrow book with borrowerId: {}, bookId: {}", borrowerId, bookId);
+    public ResponseEntity<Void> borrowBook(@PathVariable Long borrowerId, @PathVariable Long bookId) {
+        log.info("Request to borrow book borrowerId={}, bookId={}", borrowerId, bookId);
         borrowerService.borrowBook(borrowerId, bookId);
-        return ResponseEntity.ok("Book borrowed successfully");
+        return ResponseEntity.noContent().build(); // 204 No Content
     }
 
     @PostMapping("/{borrowerId}/return/{bookId}")
-    public ResponseEntity<String> returnBook(@PathVariable Long borrowerId, @PathVariable Long bookId) {
-        logger.info("Request to return book with borrowerId: {}, bookId: {}", borrowerId, bookId);
+    public ResponseEntity<Void> returnBook(@PathVariable Long borrowerId, @PathVariable Long bookId) {
+        log.info("Request to return book borrowerId={}, bookId={}", borrowerId, bookId);
         borrowerService.returnBook(borrowerId, bookId);
-        return ResponseEntity.ok("Book returned successfully");
+        return ResponseEntity.noContent().build(); // 204 No Content
     }
 
     @GetMapping
     public ResponseEntity<List<BorrowerDTO>> getAllBorrowers() {
-        logger.info("Request to get all borrowers");
+        log.info("Request to get all borrowers");
         List<BorrowerDTO> borrowers = borrowerService.getAllBorrowers();
         return ResponseEntity.ok(borrowers);
     }
 
     @GetMapping("/{borrowerId}")
     public ResponseEntity<BorrowerDTO> getBorrowerDetails(@PathVariable Long borrowerId) {
-        logger.info("Request to get borrower with id: {}", borrowerId);
-        BorrowerDTO borrowerDTO = borrowerService.getBorrowerById(borrowerId);
-        return ResponseEntity.ok(borrowerDTO);
+        log.info("Request to get borrower with id={}", borrowerId);
+
+        return borrowerService.getBorrowerById(borrowerId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

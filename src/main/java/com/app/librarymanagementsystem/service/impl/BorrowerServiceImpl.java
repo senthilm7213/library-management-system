@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BorrowerServiceImpl implements BorrowerService {
@@ -94,10 +95,10 @@ public class BorrowerServiceImpl implements BorrowerService {
     }
 
     @Override
-    public BorrowerDTO getBorrowerById(Long borrowerId) {
+    public Optional<BorrowerDTO> getBorrowerById(Long borrowerId) {
         Borrower borrower = borrowerRepository.findById(borrowerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Borrower not found with id: " + borrowerId));
-        return modelMapper.map(borrower, BorrowerDTO.class);
+        return Optional.ofNullable(modelMapper.map(borrower, BorrowerDTO.class));
     }
 
 }

@@ -3,14 +3,15 @@
 package com.app.librarymanagementsystem.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.*;
 
 @Entity
 @Table(name = "borrower")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,9 +20,14 @@ public class Borrower {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @NotBlank(message = "Email cannot be blank")
+    @Email(message = "Invalid email format")
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false)
+    @NotBlank(message = "Name cannot be blank")
+    @Size(min = 2, max = 50, message = "Name must be between 2 and 50 characters")
+    @Column(nullable = false, length = 50)
     private String name;
+
 }

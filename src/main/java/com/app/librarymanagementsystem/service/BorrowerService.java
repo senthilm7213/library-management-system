@@ -4,6 +4,7 @@ package com.app.librarymanagementsystem.service;
 
 import com.app.librarymanagementsystem.dto.BorrowerDTO;
 import java.util.List;
+import java.util.Optional;
 
 public interface BorrowerService {
     BorrowerDTO registerBorrower(BorrowerDTO borrowerDTO);
@@ -11,5 +12,5 @@ public interface BorrowerService {
     void returnBook(Long borrowerId, Long bookId);
     List<BorrowerDTO> getAllBorrowers();
 
-    BorrowerDTO getBorrowerById(Long borrowerId);
+    Optional<BorrowerDTO> getBorrowerById(Long borrowerId);
 }

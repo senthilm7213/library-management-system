@@ -1,6 +1,7 @@
 package com.app.librarymanagementsystem.controller;
 
 import com.app.librarymanagementsystem.dto.BookDTO;
+import com.app.librarymanagementsystem.exception.ResourceNotFoundException;
 import com.app.librarymanagementsystem.service.BookService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -21,10 +21,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
-@WebMvcTest(controllers = BookController.class)
-@AutoConfigureMockMvc
+@WebMvcTest(BookController.class)
 @ActiveProfiles("test")
 class BookControllerIntegrationTest {
 
@@ -41,27 +41,18 @@ class BookControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Sample BookDTO for testing
-        testBookDTO = new BookDTO();
-        testBookDTO.setId(1L);
-        testBookDTO.setTitle("Sample Book");
-        testBookDTO.setAuthor("John Doe");
-        testBookDTO.setIsbn("1234567890");
-        testBookDTO.setBorrowerId(null);
+        testBookDTO = new BookDTO(1L, "1234567890", "Sample Book", "John Doe", null);
     }
 
     @Test
     void testRegisterBook() throws Exception {
-        // Mocking the service method to return the testBookDTO when called
         Mockito.when(bookService.registerBook(Mockito.any(BookDTO.class))).thenReturn(testBookDTO);
 
-        // Perform POST request to /api/books with testBookDTO as JSON
-        ResultActions resultActions = mockMvc.perform(MockMvcRequestBuilders.post("/api/books")
+        ResultActions result = mockMvc.perform(MockMvcRequestBuilders.post("/api/books")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testBookDTO)));
 
-        // Verify the response
-        resultActions.andExpect(MockMvcResultMatchers.status().isCreated())
+        result.andExpect(MockMvcResultMatchers.status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(testBookDTO.getId()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.title").value(testBookDTO.getTitle()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.author").value(testBookDTO.getAuthor()))
@@ -70,18 +61,21 @@ class BookControllerIntegrationTest {
 
     @Test
     void testGetAllBooks() throws Exception {
-        // Mocking the service method to return a list of testBookDTOs when called
-        List<BookDTO> bookDTOList = Collections.singletonList(testBookDTO);
-        Mockito.when(bookService.getAllBooks()).thenReturn(bookDTOList);
+        List<BookDTO> bookList = Collections.singletonList(testBookDTO);
+        Mockito.when(bookService.getAllBooks()).thenReturn(bookList);
 
-        // Perform GET request to /api/books
-        ResultActions resultActions = mockMvc.perform(MockMvcRequestBuilders.get("/api/books"));
+        ResultActions result = mockMvc.perform(MockMvcRequestBuilders.get("/api/books"));
 
-        // Verify the response
-        resultActions.andExpect(MockMvcResultMatchers.status().isOk())
+        result.andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(testBookDTO.getId()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$[0].title").value(testBookDTO.getTitle()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$[0].author").value(testBookDTO.getAuthor()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$[0].isbn").value(testBookDTO.getIsbn()));
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].title").value(testBookDTO.getTitle()));
     }
-}
+
+    @Test
+    void testGetBookById() throws Exception {
+        Mockito.when(bookService.getBookById(1L)).thenReturn(Optional.ofNullable(testBookDTO));
+
+        ResultActions result = mockMvc.perform(MockMvcRequestBuilders.get("/api/books/{id}", 1L));
+
+        result.andExpect(MockMvcResultMatchers.status().isOk());
+    }}

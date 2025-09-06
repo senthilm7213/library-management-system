@@ -8,33 +8,31 @@ import com.app.librarymanagementsystem.exception.ResourceNotFoundException;
 import com.app.librarymanagementsystem.repository.BookRepository;
 import com.app.librarymanagementsystem.repository.BorrowerRepository;
 import com.app.librarymanagementsystem.service.BookService;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
     private final ModelMapper modelMapper;
     private final BorrowerRepository borrowerRepository;
 
-    @Autowired
-    public BookServiceImpl(BookRepository bookRepository, ModelMapper modelMapper, BorrowerRepository borrowerRepository) {
-        this.bookRepository = bookRepository;
-        this.modelMapper = modelMapper;
-        this.borrowerRepository = borrowerRepository;
-    }
-
+    @Override
     public BookDTO registerBook(BookDTO bookDTO) {
         validateBook(bookDTO);
 
         Book book = modelMapper.map(bookDTO, Book.class);
-        if (bookDTO.getBorrowerId() != null && bookDTO.getBorrowerId() != 0) {
+
+        // Associate borrower if provided
+        if (bookDTO.getBorrowerId() != null && bookDTO.getBorrowerId() > 0) {
             Borrower borrower = borrowerRepository.findById(bookDTO.getBorrowerId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Borrower not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Borrower not found with id: " + bookDTO.getBorrowerId()));
             book.setBorrower(borrower);
         } else {
             book.setBorrower(null);
@@ -46,12 +44,13 @@ public class BookServiceImpl implements BookService {
 
     private void validateBook(BookDTO bookDTO) {
         List<Book> existingBooks = bookRepository.findByIsbn(bookDTO.getIsbn());
-        for (Book existingBook : existingBooks) {
+        existingBooks.forEach(existingBook -> {
             if (!existingBook.getTitle().equals(bookDTO.getTitle()) ||
                     !existingBook.getAuthor().equals(bookDTO.getAuthor())) {
-                throw new IllegalArgumentException("Books with the same ISBN must have the same title and author");
+                throw new IllegalArgumentException(
+                        "Books with the same ISBN must have the same title and author");
             }
-        }
+        });
     }
 
     @Override
@@ -62,9 +61,9 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public BookDTO getBookById(Long bookId) {
+    public Optional<BookDTO> getBookById(Long bookId) {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + bookId));
-        return modelMapper.map(book, BookDTO.class);
+        return Optional.ofNullable(modelMapper.map(book, BookDTO.class));
     }
 }

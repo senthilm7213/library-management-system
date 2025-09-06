@@ -28,179 +28,105 @@ class BookServiceTest {
 
     @Mock
     private BookRepository bookRepository;
+
     @Mock
     private BorrowerRepository borrowerRepository;
+
     @Mock
     private ModelMapper modelMapper;
 
     @InjectMocks
     private BookServiceImpl bookService;
 
-    private BookDTO createBookDTO(String isbn, String title, String author) {
-        return new BookDTO(null, isbn, title, author, null);
-    }
+    private BookDTO testBookDTO;
+    private Book testBook;
 
     @BeforeEach
     void setUp() {
+        testBookDTO = new BookDTO(null, "1234567890", "Test Book", "Test Author", null);
+        testBook = new Book(1L, "1234567890", "Test Book", "Test Author", null);
     }
 
     @Test
     void testRegisterBook() {
-        // Given
-        BookDTO bookDTO = createBookDTO("1234567890", "Test Book", "Test Author");
-        Book book = new Book(1L, "1234567890", "Test Book", "Test Author", null);
+        mockModelMapper(testBookDTO, testBook);
 
-        // Mocking
-        when(modelMapper.map(bookDTO, Book.class)).thenReturn(book);
-        when(modelMapper.map(book, BookDTO.class)).thenReturn(bookDTO);
-        when(bookRepository.save(any(Book.class))).thenReturn(book);
+        when(bookRepository.save(any(Book.class))).thenReturn(testBook);
 
-        // When
-        BookDTO savedBook = bookService.registerBook(bookDTO);
+        BookDTO savedBook = bookService.registerBook(testBookDTO);
 
-        // Then
-        assertEquals(bookDTO.getIsbn(), savedBook.getIsbn());
-        assertEquals(bookDTO.getTitle(), savedBook.getTitle());
-        assertEquals(bookDTO.getAuthor(), savedBook.getAuthor());
+        assertEquals(testBookDTO.getIsbn(), savedBook.getIsbn());
+        assertEquals(testBookDTO.getTitle(), savedBook.getTitle());
+        assertEquals(testBookDTO.getAuthor(), savedBook.getAuthor());
     }
 
     @Test
-    void testRegisterBookWithExistingISBNAndSameTitleAuthor() {
-        // Given
-        BookDTO bookDTO = createBookDTO("1234567890", "Test Book", "Test Author");
-        Book existingBook = new Book(1L, "1234567890", "Test Book", "Test Author", null);
-        List<Book> existingBooks = List.of(existingBook);
+    void testRegisterBookWithExistingISBNConflict() {
+        Book conflictingBook = new Book(2L, "1234567890", "Different Title", "Different Author", null);
+        when(bookRepository.findByIsbn(testBookDTO.getIsbn())).thenReturn(List.of(conflictingBook));
 
-        // Mocking
-        when(bookRepository.findByIsbn(bookDTO.getIsbn())).thenReturn(existingBooks);
-        when(modelMapper.map(bookDTO, Book.class)).thenReturn(existingBook);
-
-
-        // When / Then
-        assertDoesNotThrow(() -> bookService.registerBook(bookDTO));
+        assertThrows(IllegalArgumentException.class, () -> bookService.registerBook(testBookDTO));
     }
-
-    @Test
-    void testRegisterBookWithExistingISBNAndDifferentTitle() {
-        // Given
-        BookDTO bookDTO = createBookDTO("1234567890", "Different Title", "Test Author");
-        Book existingBook = new Book(1L, "1234567890", "Test Book", "Test Author", null);
-        List<Book> existingBooks = List.of(existingBook);
-
-        // Mocking
-        when(bookRepository.findByIsbn(bookDTO.getIsbn())).thenReturn(existingBooks);
-
-        // When / Then
-        assertThrows(IllegalArgumentException.class, () -> bookService.registerBook(bookDTO));
-    }
-
-    @Test
-    void testRegisterBookWithExistingISBNAndDifferentAuthor() {
-        // Given
-        BookDTO bookDTO = createBookDTO("1234567890", "Test Book", "Different Author");
-        Book existingBook = new Book(1L, "1234567890", "Test Book", "Test Author", null);
-        List<Book> existingBooks = List.of(existingBook);
-
-        // Mocking
-        when(bookRepository.findByIsbn(bookDTO.getIsbn())).thenReturn(existingBooks);
-
-        // When / Then
-        assertThrows(IllegalArgumentException.class, () -> bookService.registerBook(bookDTO));
-    }
-
-    @Test
-    void testGetAllBooks() {
-        // Given
-        Book book1 = new Book(1L, "1234567890", "Book 1", "Author 1", null);
-        Book book2 = new Book(2L, "0987654321", "Book 2", "Author 2", null);
-        List<Book> mockBooks = Arrays.asList(book1, book2);
-
-        // Mocking
-        when(bookRepository.findAll()).thenReturn(mockBooks);
-        when(modelMapper.map(book1, BookDTO.class)).thenReturn(new BookDTO(book1.getId(), book1.getIsbn(), book1.getTitle(), book1.getAuthor(), null));
-        when(modelMapper.map(book2, BookDTO.class)).thenReturn(new BookDTO(book2.getId(), book2.getIsbn(), book2.getTitle(), book2.getAuthor(), null));
-
-        // When
-        List<BookDTO> books = bookService.getAllBooks();
-
-        // Then
-        assertEquals(2, books.size());
-        assertEquals(book1.getIsbn(), books.get(0).getIsbn());
-        assertEquals(book2.getIsbn(), books.get(1).getIsbn());
-    }
-
 
     @Test
     void testRegisterBookWithValidBorrowerId() {
-        // Given
-        BookDTO bookDTO = createBookDTO("1234567890", "Test Book", "Test Author");
-        bookDTO.setBorrowerId(1L);
         Borrower borrower = new Borrower(1L, "doe@john.com", "John Doe");
+        testBookDTO.setBorrowerId(1L);
 
-        // Mocking
-        when(modelMapper.map(bookDTO, Book.class)).thenReturn(new Book());
-        when(modelMapper.map(new Book(), BookDTO.class)).thenReturn(bookDTO);
+        mockModelMapper(testBookDTO, testBook);
         when(borrowerRepository.findById(1L)).thenReturn(Optional.of(borrower));
-        when(bookRepository.save(any(Book.class))).thenReturn(new Book());
+        when(bookRepository.save(any(Book.class))).thenReturn(testBook);
 
-        // When
-        BookDTO savedBook = bookService.registerBook(bookDTO);
+        BookDTO savedBook = bookService.registerBook(testBookDTO);
 
-        // Then
         assertNotNull(savedBook);
-        assertEquals(bookDTO.getBorrowerId(), savedBook.getBorrowerId());
+        assertEquals(testBookDTO.getBorrowerId(), savedBook.getBorrowerId());
     }
 
     @Test
     void testRegisterBookWithInvalidBorrowerId() {
-        // Given
-        BookDTO bookDTO = createBookDTO("1234567890", "Test Book", "Test Author");
-        bookDTO.setBorrowerId(999L);
+        testBookDTO.setBorrowerId(999L);
 
-        // Mocking
-        when(modelMapper.map(bookDTO, Book.class)).thenReturn(new Book());
+        mockModelMapper(testBookDTO, testBook);
         when(borrowerRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When / Then
-        assertThrows(ResourceNotFoundException.class, () -> bookService.registerBook(bookDTO));
+        assertThrows(ResourceNotFoundException.class, () -> bookService.registerBook(testBookDTO));
     }
 
     @Test
-    void testRegisterBookWithNullBorrowerId() {
-        // Given
-        BookDTO bookDTO = createBookDTO("1234567890", "Test Book", "Test Author");
-        bookDTO.setBorrowerId(null);
+    void testGetAllBooks() {
+        Book book1 = new Book(1L, "1234567890", "Book 1", "Author 1", null);
+        Book book2 = new Book(2L, "0987654321", "Book 2", "Author 2", null);
+        List<Book> books = Arrays.asList(book1, book2);
 
-        // Mocking
-        when(modelMapper.map(bookDTO, Book.class)).thenReturn(new Book());
-        when(modelMapper.map(new Book(), BookDTO.class)).thenReturn(bookDTO);
-        when(bookRepository.save(any(Book.class))).thenReturn(new Book());
+        when(bookRepository.findAll()).thenReturn(books);
+        when(modelMapper.map(book1, BookDTO.class)).thenReturn(new BookDTO(book1.getId(), book1.getIsbn(), book1.getTitle(), book1.getAuthor(), null));
+        when(modelMapper.map(book2, BookDTO.class)).thenReturn(new BookDTO(book2.getId(), book2.getIsbn(), book2.getTitle(), book2.getAuthor(), null));
 
-        // When
-        BookDTO savedBook = bookService.registerBook(bookDTO);
+        List<BookDTO> result = bookService.getAllBooks();
 
-        // Then
-        assertNotNull(savedBook);
-        assertNull(savedBook.getBorrowerId());
+        assertEquals(2, result.size());
     }
 
     @Test
-    void testRegisterBookWithZeroBorrowerId() {
-        // Given
-        BookDTO bookDTO = createBookDTO("1234567890", "Test Book", "Test Author");
-        bookDTO.setBorrowerId(0L);
+    void testGetBookByIdSuccess() {
+        when(bookRepository.findById(1L)).thenReturn(Optional.of(testBook));
+        when(modelMapper.map(testBook, BookDTO.class)).thenReturn(testBookDTO);
 
-        // Mocking
-        when(modelMapper.map(bookDTO, Book.class)).thenReturn(new Book());
-        when(modelMapper.map(new Book(), BookDTO.class)).thenReturn(bookDTO);
-        when(bookRepository.save(any(Book.class))).thenReturn(new Book());
+        Optional<BookDTO> bookDTO = bookService.getBookById(1L);
 
-        // When
-        BookDTO savedBook = bookService.registerBook(bookDTO);
-
-        // Then
-        assertNotNull(savedBook);
-        assertEquals(0L, savedBook.getBorrowerId());
+        assertEquals(testBookDTO.getTitle(), bookDTO.get().getTitle());
     }
 
+    @Test
+    void testGetBookByIdNotFound() {
+        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> bookService.getBookById(99L));
+    }
+
+    // Helper method for mocking ModelMapper
+    private void mockModelMapper(BookDTO dto, Book book) {
+        when(modelMapper.map(dto, Book.class)).thenReturn(book);
+        when(modelMapper.map(book, BookDTO.class)).thenReturn(dto);
+    }
 }

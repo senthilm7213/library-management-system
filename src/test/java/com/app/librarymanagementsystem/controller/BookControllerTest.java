@@ -1,6 +1,7 @@
 package com.app.librarymanagementsystem.controller;
 
 import com.app.librarymanagementsystem.dto.BookDTO;
+import com.app.librarymanagementsystem.exception.ResourceNotFoundException;
 import com.app.librarymanagementsystem.service.BookService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,8 +14,10 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -36,28 +39,22 @@ class BookControllerTest {
 
     @Test
     void testRegisterBook() {
-        // Mocking behavior of BookService
         when(bookService.registerBook(any(BookDTO.class))).thenReturn(mockBookDTO);
 
-        // Call the controller method
-        ResponseEntity<BookDTO> responseEntity = bookController.registerBook(mockBookDTO);
+        ResponseEntity<BookDTO> response = bookController.registerBook(mockBookDTO);
 
-        // Assertions
-        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
-        assertEquals(mockBookDTO, responseEntity.getBody());
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(mockBookDTO, response.getBody());
     }
 
     @Test
     void testGetAllBooks() {
-        // Mocking behavior of BookService
         List<BookDTO> mockBooks = Collections.singletonList(mockBookDTO);
         when(bookService.getAllBooks()).thenReturn(mockBooks);
 
-        // Call the controller method
-        ResponseEntity<List<BookDTO>> responseEntity = bookController.getAllBooks();
+        ResponseEntity<List<BookDTO>> response = bookController.getAllBooks();
 
-        // Assertions
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals(mockBooks, responseEntity.getBody());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(mockBooks, response.getBody());
     }
 }

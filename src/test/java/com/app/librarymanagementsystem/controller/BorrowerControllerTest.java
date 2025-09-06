@@ -57,7 +57,7 @@ class BorrowerControllerTest {
         doNothing().when(borrowerService).borrowBook(borrowerId, bookId);
 
         // Call the controller method
-        ResponseEntity<String> responseEntity = borrowerController.borrowBook(borrowerId, bookId);
+        ResponseEntity<Void> responseEntity = borrowerController.borrowBook(borrowerId, bookId);
 
         // Assertions
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
@@ -73,7 +73,7 @@ class BorrowerControllerTest {
         doNothing().when(borrowerService).returnBook(borrowerId, bookId);
 
         // Call the controller method
-        ResponseEntity<String> responseEntity = borrowerController.returnBook(borrowerId, bookId);
+        ResponseEntity<Void> responseEntity = borrowerController.returnBook(borrowerId, bookId);
 
         // Assertions
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
