@@ -17,7 +17,6 @@ import java.util.List;
 @RequestMapping("/api/borrowers")
 @Slf4j
 @RequiredArgsConstructor
-@SecurityRequirement(name = "bearerAuth")
 public class BorrowerController {
 
     private final BorrowerService borrowerService;

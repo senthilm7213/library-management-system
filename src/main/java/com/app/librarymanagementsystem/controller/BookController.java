@@ -17,7 +17,6 @@ import java.util.List;
 @RequestMapping("/api/books")
 @Slf4j
 @RequiredArgsConstructor
-@SecurityRequirement(name = "bearerAuth")
 public class BookController {
     private final BookService bookService;
 
